@@ -9,6 +9,8 @@ from models import db, User, Review, Game
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# app.json.compact = False is a flask feature that has json responses print on separate lines with indentations
+# it is set to false by default
 app.json.compact = False
 
 migrate = Migrate(app, db)
@@ -20,8 +22,58 @@ def index():
     return "Index for Game/Review/User API"
 
 # start building your API here
+@app.route('/games')
+def games():
 
+    games = [games.to_dict() for games in Game.query.all()]
 
+    #for game in Game.query.all():
+     #   game_dict = game.to_dict()
+      #  games.append(game_dict)
+
+    response = make_response(
+        #jsonify is a method in flask that converts a python object into a json object
+        #and returns it as a response object to the client
+        #it will not accept models as an argument
+        #jsonify(games),
+        games,
+        200
+    )
+
+    return response
+
+@app.route('/games/<int:id>')
+def game_by_id(id):
+    game = Game.query.filter(Game.id == id).first()
+
+    game_dict = game.to_dict()
+
+    response = make_response(
+        game_dict,
+        200
+    )
+
+    return response
+
+@app.route('/games/users/<int:id>')
+def game_users_by_id(id):
+    game = Game.query.filter(Game.id == id).first()
+
+    # use association proxy to get users for a game
+    users = [user.to_dict(rules=("-reviews",)) for user in game.users]
+
+    #users = [review.user.to_dict(rules=("-reviews",)) for review in game.reviews]
+    #for reviews in game.reviews:
+      #  user = reviews.user
+       # user_dict = user.to_dict(rules=("-reviews",))
+        #users.append(user_dict)
+
+    response = make_response(
+            users,
+            200
+    )
+
+    return response
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
 
